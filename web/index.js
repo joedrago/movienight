@@ -121,9 +121,6 @@ socket.on("connect", () => {
 })
 
 function init() {
-    // Instantiate the clipboard helper
-    new ClipboardJS("#share")
-
     // Kick the player after a new .src load
     el.v.addEventListener("loadeddata", () => {
         el.v.currentTime = room.pos

@@ -175,8 +175,8 @@ async function main(argv) {
     //     host = "0.0.0.0"
     // }
 
-    http.listen(3003, host, () => {
-        console.log(`listening on ${host}:3003`)
+    http.listen(3033, host, () => {
+        console.log(`listening on ${host}:3033`)
     })
 }
 

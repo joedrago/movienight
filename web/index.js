@@ -1,17 +1,6 @@
 // --------------------------------------------------------------------------------------
 // Helpers
 
-function qs(name) {
-    let url = window.location.href
-    name = name.replace(/[\[\]]/g, "\\$&")
-    let regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)")
-    let results = regex.exec(url)
-    if (!results || !results[2]) {
-        return null
-    }
-    return decodeURIComponent(results[2].replace(/\+/g, " "))
-}
-
 function now() {
     return Math.floor(Date.now() / 1000)
 }
@@ -19,7 +8,6 @@ function now() {
 // --------------------------------------------------------------------------------------
 // Globals
 
-const qsroom = qs("room")
 const el = {}
 for (let name of [
     "videoContainer",
@@ -121,27 +109,20 @@ socket.on("connect", () => {
 
     // clue in the server which room we walked into
     let roomPayload = {
-        room: qsroom
+        room: window.ROOM
+    }
+    if (el.v.src && el.v.src.length > 0) {
+        roomPayload.url = el.v.src
+        if (el.v.currentTime > 0) {
+            roomPayload.pos = el.v.currentTime
+        }
     }
     socket.emit("room", roomPayload)
 })
 
 function init() {
-    // Listen for mouse events to hide/show all controls
-    el.videoContainer.addEventListener(
-        "mousemove",
-        (event) => {
-            window.showControls()
-        },
-        false
-    )
-    el.videoContainer.addEventListener(
-        "mouseout",
-        (event) => {
-            window.hideControls()
-        },
-        false
-    )
+    // Instantiate the clipboard helper
+    new ClipboardJS("#share")
 
     // Kick the player after a new .src load
     el.v.addEventListener("loadeddata", () => {
@@ -155,9 +136,9 @@ function init() {
     // the pause button toggle
     el.pause.addEventListener("click", () => {
         if (el.v.paused) {
-            socket.emit("play", { room: qsroom, pos: el.v.currentTime })
+            socket.emit("play", { room: window.ROOM, pos: el.v.currentTime })
         } else {
-            socket.emit("pause", { room: qsroom, pos: el.v.currentTime })
+            socket.emit("pause", { room: window.ROOM, pos: el.v.currentTime })
         }
     })
 
@@ -166,12 +147,34 @@ function init() {
         toggleFullscreen()
     })
 
-    // the main video itself was clicked
-    el.v.addEventListener("click", () => {
+    // Remove the Click panel
+    el.unmute.addEventListener("click", () => {
         el.unmute.style.display = "none"
         el.v.muted = false
         el.volume.value = Math.floor(el.v.volume * 100)
-        console.log(`v.click ${el.volume.value}`)
+
+        // Listen for mouse events to hide/show all controls. NOTE: we don't
+        // offer these events until they successfully click away the Unmute
+        // panel.
+        el.videoContainer.addEventListener(
+            "mousemove",
+            (event) => {
+                window.showControls()
+            },
+            false
+        )
+        el.videoContainer.addEventListener(
+            "mouseout",
+            (event) => {
+                window.hideControls()
+            },
+            false
+        )
+    })
+
+    // the main video itself was clicked
+    el.v.addEventListener("click", () => {
+        // Do nothing, for now
     })
 
     // Update the seek bar as the video plays
@@ -185,7 +188,7 @@ function init() {
     seek.addEventListener("input", () => {
         const time = el.v.duration * (el.seek.value / 100)
         // el.v.currentTime = time
-        socket.emit("seek", { room: qsroom, pos: time })
+        socket.emit("seek", { room: window.ROOM, pos: time })
     })
 
     // volume control
@@ -201,7 +204,7 @@ function init() {
         if (e.key === "Enter" || e.keyCode === 13) {
             console.log(`setting url: ${el.url.value}`)
             let roomPayload = {
-                room: qsroom,
+                room: window.ROOM,
                 url: el.url.value
             }
             socket.emit("room", roomPayload)

@@ -33,7 +33,7 @@
         top: 0px;
         left: 0px;
         right: 0px;
-        display: flex;
+        display: none;
         justify-content: space-between;
         background: rgba(0, 0, 50, 0.5);
         margin: auto auto;
@@ -50,7 +50,7 @@
         bottom: 0px;
         left: 0px;
         right: 0px;
-        display: flex;
+        display: none;
         justify-content: space-between;
         background: rgba(50, 50, 50, 0.5);
         margin: auto auto;
@@ -91,7 +91,6 @@
     }
 
     #unmute {
-        pointer-events: none;
         position: absolute;
         top: 0px;
         bottom: 0px;
@@ -111,7 +110,7 @@
 <div id="videoContainer">
     <video id="v" muted autoplay></video>
     <div id="unmute">
-        Click to watch!
+        Click to activate!
     </div>
     <div id="urlControls">
         <input id="url" type="text" value="" placeholder="Paste a url to a .mp4 here ...">
@@ -124,7 +123,11 @@
     </div>
 </div>
 
+<script>
+    window.ROOM = "!ROOM!";
+</script>
+
 <script src="/socket.io/socket.io.js"></script>
-<script src="index.js"></script>
+<script src="_web/index.js"></script>
 </body>
 </html>

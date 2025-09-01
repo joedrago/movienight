@@ -21,6 +21,10 @@ function unusedRoomName() {
     }
 }
 
+function sanitizeRoomName(name) {
+    return name.replaceAll(/[^A-Za-z0-9]/g, "")
+}
+
 class Room {
     constructor(name) {
         this.name = name
@@ -49,6 +53,7 @@ class Room {
         console.log(`[${this.name}] send(${socket.id})`)
         const broadcastPos = this.pos + (now() - this.updated)
         socket.emit("room", {
+            name: this.name,
             url: this.url,
             playing: this.playing,
             pos: broadcastPos
@@ -117,7 +122,12 @@ async function main(argv) {
                 }
                 rooms[roomName].connect(socket)
                 if (msg.url) {
+                    console.log(`[${roomName}] initial room url: ${msg.url}`)
                     rooms[roomName].setUrl(msg.url)
+                    if (msg.pos) {
+                        console.log(`[${roomName}] initial room pos: ${msg.pos}`)
+                        rooms[roomName].seek(msg.pos, socket.id)
+                    }
                 }
             }
         })
@@ -153,22 +163,23 @@ async function main(argv) {
     })
 
     app.get("/", (req, res) => {
-        roomName = req.query.room
-        if (!roomName) {
-            return res.redirect(`/?room=${encodeURIComponent(unusedRoomName())}`)
+        return res.redirect(`/${encodeURIComponent(unusedRoomName())}`)
+    })
+
+    app.use("/_web", express.static("web"))
+
+    app.get("/:room", (req, res) => {
+        const sanitized = sanitizeRoomName(req.params.room)
+        if (sanitized != req.params.room) {
+            return res.redirect(`/${encodeURIComponent(sanitized)}`)
         }
 
         html = fs.readFileSync(`${__dirname}/web/index.html`, "utf8")
-        // html = html.replace(/!CLIENT_ID!/, discordClientID)
+        html = html.replace(/!ROOM!/, sanitized)
         res.send(html)
     })
 
-    app.get("/room/:room", (req, res) => {
-        res.redirect(`/?room=${encodeURIComponent(req.params.room)}`)
-    })
-
     app.use(bodyParser.json())
-    app.use(express.static("web"))
 
     host = "127.0.0.1"
     // if (argv.length > 0) {

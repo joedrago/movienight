@@ -25,6 +25,134 @@ function sanitizeRoomName(name) {
     return name.replaceAll(/[^A-Za-z0-9]/g, "")
 }
 
+const clone = (o) => {
+    return JSON.parse(JSON.stringify(o))
+}
+
+const shuffle = (array) => {
+    for (let i = array.length - 1; i > 0; --i) {
+        const j = Math.floor(Math.random() * (i + 1))
+        const temp = array[i]
+        array[i] = array[j]
+        array[j] = temp
+    }
+}
+
+function prettyPos(totalSeconds) {
+    const hours = Math.floor(totalSeconds / 3600)
+    const minutes = Math.floor((totalSeconds % 3600) / 60)
+    const seconds = Math.floor(totalSeconds % 60)
+
+    // Pad single-digit numbers with a leading zero for consistent formatting
+    const formattedHours = String(hours).padStart(2, "0")
+    const formattedMinutes = String(minutes).padStart(2, "0")
+    const formattedSeconds = String(seconds).padStart(2, "0")
+
+    return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`
+}
+
+const NAMES = [
+    "Banjo",
+    "Bayonetta",
+    "Bowser Jr.",
+    "Bowser",
+    "Byleth",
+    "Captain Falcon",
+    "Charizard",
+    "Chrom",
+    "Cloud",
+    "Corrin",
+    "Daisy",
+    "Dark Pit",
+    "Dark Samus",
+    "Diddy Kong",
+    "Donkey Kong",
+    "Dr. Mario",
+    "Duck Hunt",
+    "Falco",
+    "Fox",
+    "Ganondorf",
+    "Greninja",
+    "Hero",
+    "Ice Climbers",
+    "Ike",
+    "Incineroar",
+    "Inkling",
+    "Isabelle",
+    "Ivysaur",
+    "Jigglypuff",
+    "Joker",
+    "Kazooie",
+    "Kazuya",
+    "Ken",
+    "King Dedede",
+    "King K. Rool",
+    "Kirby",
+    "Link",
+    "Little Mac",
+    "Lucario",
+    "Lucas",
+    "Lucina",
+    "Luigi",
+    "Mario",
+    "Marth",
+    "Mega Man",
+    "Meta Knight",
+    "Mewtwo",
+    "Mii Brawler",
+    "Mii Gunner",
+    "Mii Swordfighter",
+    "Min Min",
+    "Mr. Game & Watch",
+    "Mythra",
+    "Ness",
+    "Olimar",
+    "Pac-Man",
+    "Palutena",
+    "Peach",
+    "Pichu",
+    "Pikachu",
+    "Piranha Plant",
+    "Pit",
+    "Pyra",
+    "R.O.B.",
+    "Richter",
+    "Ridley",
+    "Robin",
+    "Rosalina",
+    "Roy",
+    "Ryu",
+    "Samus",
+    "Sephiroth",
+    "Sheik",
+    "Shulk",
+    "Simon",
+    "Snake",
+    "Sonic",
+    "Sora",
+    "Squirtle",
+    "Steve",
+    "Terry",
+    "Toon Link",
+    "Villager",
+    "Wario",
+    "Wii Fit Trainer",
+    "Wolf",
+    "Yoshi",
+    "Young Link",
+    "Zelda",
+    "Zero Suit Samus"
+]
+
+let namePool = []
+function randomName() {
+    if (namePool.length < 1) {
+        namePool = clone(NAMES)
+        shuffle(namePool)
+    }
+    return namePool.shift()
+}
+
 class Room {
     constructor(name) {
         this.name = name
@@ -33,11 +161,21 @@ class Room {
         this.playing = true
         this.updated = now()
         this.sockets = {}
+        this.names = {}
     }
 
-    connect(socket) {
+    connect(socket, uid) {
         console.log(`[${this.name}] connect(${socket.id})`)
         this.sockets[socket.id] = socket
+        let sendJoined = false
+        if (!this.names[uid]) {
+            this.names[uid] = randomName()
+            sendJoined = true
+        }
+        this.names[socket.id] = this.names[uid]
+        if (sendJoined) {
+            this.notify(socket.id, `Joined`)
+        }
         this.send(socket)
     }
 
@@ -48,7 +186,6 @@ class Room {
         }
     }
 
-    // TODO: dont advance time while paused!
     send(socket) {
         console.log(`[${this.name}] send(${socket.id})`)
         const broadcastPos = this.pos + (now() - this.updated)
@@ -62,52 +199,64 @@ class Room {
 
     broadcast(senderID) {
         for (let id in this.sockets) {
-            // if (id == senderID) {
-            //     continue
-            // }
             const socket = this.sockets[id]
             this.send(socket)
         }
     }
 
-    setUrl(url) {
+    notify(senderID, text) {
+        for (let id in this.sockets) {
+            const socket = this.sockets[id]
+            socket.emit("notify", {
+                id: senderID,
+                name: this.names[senderID],
+                text: text
+            })
+        }
+    }
+
+    setUrl(senderID, url) {
         if (url != null && url.length > 0 && this.url != url) {
             console.log(`[${this.name}] setUrl(${url})`)
             this.url = url
             this.pos = 0
             this.updated = now()
             this.broadcast()
+            this.notify(senderID, `URL ${url}`)
         } else {
             console.log(`[${this.name}] setUrl(${url}) (ignored)`)
         }
     }
 
-    pause(pos, senderID) {
+    pause(senderID, pos) {
         console.log(`[${this.name}] pause() ${pos}`)
         if (pos != null && pos >= 0) {
             this.playing = false
             this.pos = pos
             this.updated = now()
             this.broadcast(senderID)
+            this.notify(senderID, `Pause`)
         }
     }
 
-    play(pos, senderID) {
+    play(senderID, pos) {
         console.log(`[${this.name}] play() ${pos}`)
         if (pos != null && pos >= 0) {
             this.playing = true
             this.pos = pos
             this.updated = now()
             this.broadcast(senderID)
+            this.notify(senderID, `Play`)
         }
     }
 
-    seek(pos, senderID) {
+    seek(senderID, pos) {
         console.log(`[${this.name}] seek(${pos})`)
         if (pos != null && pos >= 0) {
             this.pos = pos
             this.updated = now()
             this.broadcast(senderID)
+            this.notify(senderID, `Seek ${prettyPos(pos)}`)
         }
     }
 }
@@ -126,13 +275,13 @@ async function main(argv) {
                 if (!rooms[roomName]) {
                     rooms[roomName] = new Room(roomName)
                 }
-                rooms[roomName].connect(socket)
+                rooms[roomName].connect(socket, msg.uid)
                 if (msg.url) {
                     console.log(`[${roomName}] initial room url: ${msg.url}`)
-                    rooms[roomName].setUrl(msg.url)
+                    rooms[roomName].setUrl(socket.id, msg.url)
                     if (msg.pos) {
                         console.log(`[${roomName}] initial room pos: ${msg.pos}`)
-                        rooms[roomName].seek(msg.pos, socket.id)
+                        rooms[roomName].seek(socket.id, msg.pos)
                     }
                 }
             }
@@ -142,21 +291,21 @@ async function main(argv) {
             const roomName = msg.room
             if (roomName && rooms[roomName]) {
                 const room = rooms[roomName]
-                room.pause(msg.pos, socket.id)
+                room.pause(socket.id, msg.pos)
             }
         })
         socket.on("play", (msg) => {
             const roomName = msg.room
             if (roomName && rooms[roomName]) {
                 const room = rooms[roomName]
-                room.play(msg.pos, socket.id)
+                room.play(socket.id, msg.pos)
             }
         })
         socket.on("seek", (msg) => {
             const roomName = msg.room
             if (roomName && rooms[roomName]) {
                 const room = rooms[roomName]
-                room.seek(msg.pos, socket.id)
+                room.seek(socket.id, msg.pos)
             }
         })
 

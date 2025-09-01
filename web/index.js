@@ -1,9 +1,21 @@
 // --------------------------------------------------------------------------------------
 // Helpers
 
+const NOTIFICATION_DURATION_SECONDS = 5
+
 function now() {
     return Math.floor(Date.now() / 1000)
 }
+
+// --------------------------------------------------------------------------------------
+// UID
+
+let UID = localStorage.getItem("movienightUID")
+if (!UID) {
+    UID = crypto.randomUUID()
+    localStorage.setItem("movienightUID", UID)
+}
+console.log(`UID: ${UID}`)
 
 // --------------------------------------------------------------------------------------
 // Globals
@@ -19,7 +31,8 @@ for (let name of [
     "seek",
     "volume",
     "fullscreen",
-    "unmute"
+    "unmute",
+    "notification"
 ]) {
     el[name] = document.getElementById(name)
 }
@@ -27,9 +40,33 @@ const socket = io()
 let room = null
 let controlsVisible = true
 let hideTimeout = null
+let notifications = []
+let allowVideoControls = false
 
 // --------------------------------------------------------------------------------------
 // Event Handlers
+
+const updateNotifications = () => {
+    let kept = []
+    let text = ""
+    let n = null
+    let curTime = now()
+    while ((n = notifications.shift())) {
+        let name = n.name
+        if (socket.id == n.id) {
+            name += `<span class="notificationyou"> (You)</span>`
+        }
+        text += `<span class="notificationname">${name}</span><span class="notificationtext">: ${n.text}</span><br>`
+        if (curTime < n.time + NOTIFICATION_DURATION_SECONDS) {
+            kept.push(n)
+        }
+    }
+    notifications = kept
+    el.notification.innerHTML = text
+}
+setInterval(() => {
+    updateNotifications()
+}, 1000)
 
 window.hideControls = () => {
     if (controlsVisible) {
@@ -43,7 +80,9 @@ window.showControls = () => {
     if (!controlsVisible) {
         controlsVisible = true
         el.urlControls.style.display = "flex"
-        el.videoControls.style.display = "flex"
+        if (allowVideoControls) {
+            el.videoControls.style.display = "flex"
+        }
     }
 
     if (hideTimeout != null) {
@@ -76,6 +115,7 @@ socket.on("room", (msg) => {
         if (room.url) {
             el.v.src = room.url
             el.url.value = room.url
+            allowVideoControls = true
 
             try {
                 const u = new URL(room.url)
@@ -104,14 +144,28 @@ socket.on("room", (msg) => {
     }
 })
 
+socket.on("notify", (msg) => {
+    if (msg.text && msg.text.length > 0) {
+        notifications.push({
+            id: msg.id,
+            text: msg.text,
+            name: msg.name,
+            time: now()
+        })
+        updateNotifications()
+    }
+})
+
 socket.on("connect", () => {
     console.log("Connected!")
 
     // clue in the server which room we walked into
     let roomPayload = {
-        room: window.ROOM
+        room: window.ROOM,
+        uid: UID
     }
-    if (el.v.src && el.v.src.length > 0) {
+    if (el.v.src && el.v.src.length > 0 && el.v.src != window.location) {
+        console.log(`el.v.src: ${el.v.src}`)
         roomPayload.url = el.v.src
         if (el.v.currentTime > 0) {
             roomPayload.pos = el.v.currentTime
@@ -207,6 +261,8 @@ function init() {
             socket.emit("room", roomPayload)
         }
     })
+
+    updateNotifications()
 }
 
 document.addEventListener("DOMContentLoaded", init)

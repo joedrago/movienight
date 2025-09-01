@@ -103,6 +103,28 @@
         z-index: 5;
     }
 
+    #notification {
+        display: block;
+        position: fixed;
+        bottom: 55px;
+        left: 0px;
+        font-family: monospace;
+        font-size: 0.6em;
+        color: #f80;
+        text-align: left;
+        filter: drop-shadow(2px 2px #333);
+    }
+
+    .notificationname {
+        color: #aaf;
+    }
+    .notificationyou {
+        color: #aaa;
+    }
+    .notificationtext {
+        color: #afa;
+    }
+
 </style>
 </head>
 <body>
@@ -121,6 +143,7 @@
         <input id="volume" type="range" value="0" min="0" max="100"></input>
         <span id="fullscreen">&#x26F6</span>
     </div>
+    <div id="notification"></div>
 </div>
 
 <script>

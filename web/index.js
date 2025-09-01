@@ -44,15 +44,15 @@ window.showControls = () => {
         controlsVisible = true
         el.urlControls.style.display = "flex"
         el.videoControls.style.display = "flex"
-
-        if (hideTimeout != null) {
-            clearTimeout(hideTimeout)
-        }
-        hideTimeout = setTimeout(() => {
-            hideTimeout = null
-            window.hideControls()
-        }, 3000)
     }
+
+    if (hideTimeout != null) {
+        clearTimeout(hideTimeout)
+    }
+    hideTimeout = setTimeout(() => {
+        hideTimeout = null
+        window.hideControls()
+    }, 3000)
 }
 
 window.toggleFullscreen = () => {

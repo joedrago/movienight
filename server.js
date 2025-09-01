@@ -71,7 +71,7 @@ class Room {
     }
 
     setUrl(url) {
-        if (this.url != url) {
+        if (url != null && url.length > 0 && this.url != url) {
             console.log(`[${this.name}] setUrl(${url})`)
             this.url = url
             this.pos = 0
@@ -83,26 +83,32 @@ class Room {
     }
 
     pause(pos, senderID) {
-        console.log(`[${this.name}] pause()`)
-        this.playing = false
-        this.pos = pos
-        this.updated = now()
-        this.broadcast(senderID)
+        console.log(`[${this.name}] pause() ${pos}`)
+        if (pos != null && pos >= 0) {
+            this.playing = false
+            this.pos = pos
+            this.updated = now()
+            this.broadcast(senderID)
+        }
     }
 
     play(pos, senderID) {
-        console.log(`[${this.name}] play()`)
-        this.playing = true
-        this.pos = pos
-        this.updated = now()
-        this.broadcast(senderID)
+        console.log(`[${this.name}] play() ${pos}`)
+        if (pos != null && pos >= 0) {
+            this.playing = true
+            this.pos = pos
+            this.updated = now()
+            this.broadcast(senderID)
+        }
     }
 
     seek(pos, senderID) {
         console.log(`[${this.name}] seek(${pos})`)
-        this.pos = pos
-        this.updated = now()
-        this.broadcast(senderID)
+        if (pos != null && pos >= 0) {
+            this.pos = pos
+            this.updated = now()
+            this.broadcast(senderID)
+        }
     }
 }
 

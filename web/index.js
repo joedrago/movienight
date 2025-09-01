@@ -44,11 +44,6 @@ let hideTimeout = null
 // Event Handlers
 
 window.hideControls = () => {
-    // const v = document.getElementById("v")
-    // if (v) {
-    //     v.removeAttribute("controls")
-    // }
-
     if (controlsVisible) {
         controlsVisible = false
         el.urlControls.style.display = "none"
@@ -124,6 +119,7 @@ socket.on("room", (msg) => {
 socket.on("connect", () => {
     console.log("Connected!")
 
+    // clue in the server which room we walked into
     let roomPayload = {
         room: qsroom
     }
@@ -131,6 +127,7 @@ socket.on("connect", () => {
 })
 
 function init() {
+    // Listen for mouse events to hide/show all controls
     el.videoContainer.addEventListener(
         "mousemove",
         (event) => {
@@ -138,7 +135,6 @@ function init() {
         },
         false
     )
-
     el.videoContainer.addEventListener(
         "mouseout",
         (event) => {
@@ -147,6 +143,7 @@ function init() {
         false
     )
 
+    // Kick the player after a new .src load
     el.v.addEventListener("loadeddata", () => {
         el.v.currentTime = room.pos
         if (room.playing) {
@@ -155,16 +152,8 @@ function init() {
         }
     })
 
-    // el.v.addEventListener("seeked", () => {
-    //     console.log("SEEKED")
-    //     const delta = Math.abs(v.currentTime - room.pos)
-    //     if (delta > 1) {
-    //         socket.emit("seek", { room: qsroom, pos: v.currentTime })
-    //     }
-    // })
-
+    // the pause button toggle
     el.pause.addEventListener("click", () => {
-        console.log("el.pause click")
         if (el.v.paused) {
             socket.emit("play", { room: qsroom, pos: el.v.currentTime })
         } else {
@@ -172,10 +161,12 @@ function init() {
         }
     })
 
+    // the fullscreen button toggle
     el.fullscreen.addEventListener("click", () => {
         toggleFullscreen()
     })
 
+    // the main video itself was clicked
     el.v.addEventListener("click", () => {
         el.unmute.style.display = "none"
         el.v.muted = false
@@ -197,6 +188,7 @@ function init() {
         socket.emit("seek", { room: qsroom, pos: time })
     })
 
+    // volume control
     volume.addEventListener("change", (ev) => {
         ev.preventDefault()
         el.v.muted = false
@@ -204,6 +196,7 @@ function init() {
         console.log(`volume.change ${(el.volume.value / 100).toFixed(2)}`)
     })
 
+    // listen for the enter key in the input box at the top and set a new url
     el.url.addEventListener("keyup", function (e) {
         if (e.key === "Enter" || e.keyCode === 13) {
             console.log(`setting url: ${el.url.value}`)

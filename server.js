@@ -3,6 +3,9 @@ const express = require("express")
 const fs = require("fs")
 const { randomName } = require("./names")
 
+const PRUNE_ROOM_INTERVAL_SECONDS = 300
+const PRUNE_ROOM_MAX_AGE_SECONDS = 3600
+
 let rooms = {}
 
 function now() {
@@ -39,20 +42,40 @@ function prettyPos(totalSeconds) {
     return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`
 }
 
+function pruneRooms() {
+    const roomList = Object.keys(rooms)
+    for (let roomName of roomList) {
+        const room = rooms[roomName]
+        const countAge = now() - room.countUpdated
+        if (room.count == 0 && countAge > PRUNE_ROOM_MAX_AGE_SECONDS) {
+            console.log(`[${room.name}]: Pruning; ${countAge.toFixed(2)} seconds with 0 participants`)
+            delete rooms[roomName]
+        }
+    }
+}
+
 class Room {
     constructor(name) {
         this.name = name
         this.url = ""
         this.pos = 0
+        this.count = 0
         this.playing = true
         this.updated = now()
+        this.countUpdated = now()
         this.sockets = {}
         this.names = {}
     }
 
     connect(socket, uid) {
         console.log(`[${this.name}] connect(${socket.id})`)
-        this.sockets[socket.id] = socket
+        if (!this.sockets[socket.id]) {
+            this.sockets[socket.id] = socket
+
+            ++this.count
+            this.countUpdated = now()
+            console.log(`[${this.name}] now has ${this.count} participants`)
+        }
         let sendJoined = false
         if (!this.names[uid]) {
             this.names[uid] = randomName()
@@ -69,6 +92,10 @@ class Room {
         if (this.sockets[socket.id]) {
             console.log(`[${this.name}] disconnect(${socket.id})`)
             delete this.sockets[socket.id]
+
+            --this.count
+            this.countUpdated = now()
+            console.log(`[${this.name}] now has ${this.count} participants`)
         }
     }
 
@@ -219,6 +246,8 @@ async function main(argv) {
         html = html.replace(/!ROOM!/, sanitized)
         res.send(html)
     })
+
+    setInterval(pruneRooms, PRUNE_ROOM_INTERVAL_SECONDS * 1000)
 
     app.use(bodyParser.json())
 

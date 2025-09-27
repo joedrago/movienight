@@ -256,7 +256,8 @@ function init() {
             console.log(`setting url: ${el.url.value}`)
             let roomPayload = {
                 room: window.ROOM,
-                url: el.url.value
+                url: el.url.value,
+                uid: UID
             }
             socket.emit("room", roomPayload)
         }

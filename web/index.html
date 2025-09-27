@@ -76,18 +76,41 @@
     #pause {
         cursor: pointer;
         margin-left: 10px;
+        align-self: center;
+    }
+    #pos {
+        font-size: 0.6em;
+        margin-left: 10px;
+        margin-right: 10px;
+        color: #aaa;
+        align-self: center;
     }
     #seek {
-        width: 70%;
+        flex: 1;
+        margin-left: 10px;
+        margin-right: 10px;
         accent-color: #afa;
     }
     #volume {
-        width: 10%;
+        width: 100px;
+        margin-left: 10px;
+        margin-right: 10px;
         accent-color: #aaf;
     }
     #fullscreen {
         cursor: pointer;
         margin-right: 10px;
+        align-self: center;
+    }
+    #info {
+        font-size: 0.6em;
+        margin-left: 10px;
+        margin-right: 10px;
+        align-self: center;
+        text-align: center;
+    }
+    #who {
+        color: #aaf;
     }
 
     #unmute {
@@ -139,8 +162,10 @@
     </div>
     <div id="videoControls">
         <span id="pause">&#x23EF</span>
+        <span id="pos">--</span>
         <input id="seek" type="range" value="0" max="100">
         <input id="volume" type="range" value="0" min="0" max="100"></input>
+        <div id="info"><span id="who">--</span><br><span id="count">--</span></div>
         <span id="fullscreen">&#x26F6</span>
     </div>
     <div id="notification"></div>

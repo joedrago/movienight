@@ -7,6 +7,16 @@ function now() {
     return Math.floor(Date.now() / 1000)
 }
 
+function secondsToHms(d) {
+    d = Number(d)
+
+    var h = Math.floor(d / 3600)
+    var m = Math.floor((d % 3600) / 60)
+    var s = Math.floor((d % 3600) % 60)
+
+    return ("0" + h).slice(-2) + ":" + ("0" + m).slice(-2) + ":" + ("0" + s).slice(-2)
+}
+
 // --------------------------------------------------------------------------------------
 // UID
 
@@ -144,6 +154,17 @@ socket.on("room", (msg) => {
     }
 })
 
+socket.on("info", (msg) => {
+    console.log("info: ", msg)
+
+    if (msg.nick) {
+        document.getElementById("who").innerHTML = msg.nick
+    }
+    if (typeof msg.count == "number") {
+        document.getElementById("count").innerHTML = `${msg.count} watching`
+    }
+})
+
 socket.on("notify", (msg) => {
     if (msg.text && msg.text.length > 0) {
         notifications.push({
@@ -233,6 +254,7 @@ function init() {
         const value = (100 / el.v.duration) * el.v.currentTime
         el.seek.value = value
         // console.log("v.timeupdate")
+        document.getElementById("pos").innerHTML = secondsToHms(el.v.currentTime)
     })
 
     // Seek to the new time when the seek bar value changes

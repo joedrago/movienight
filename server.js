@@ -86,6 +86,7 @@ class Room {
             this.notify(socket.id, `Joined`)
         }
         this.send(socket)
+        this.broadcastInfo()
     }
 
     disconnect(socket) {
@@ -96,6 +97,7 @@ class Room {
             --this.count
             this.countUpdated = now()
             console.log(`[${this.name}] now has ${this.count} participants`)
+            this.broadcastInfo()
         }
     }
 
@@ -110,10 +112,25 @@ class Room {
         })
     }
 
-    broadcast(senderID) {
+    broadcast() {
         for (let id in this.sockets) {
             const socket = this.sockets[id]
             this.send(socket)
+        }
+    }
+
+    info(socket) {
+        console.log(`[${this.name}] info(${socket.id})`)
+        socket.emit("info", {
+            nick: this.names[socket.id],
+            count: this.count
+        })
+    }
+
+    broadcastInfo() {
+        for (let id in this.sockets) {
+            const socket = this.sockets[id]
+            this.info(socket)
         }
     }
 
@@ -147,7 +164,7 @@ class Room {
             this.playing = false
             this.pos = pos
             this.updated = now()
-            this.broadcast(senderID)
+            this.broadcast()
             this.notify(senderID, `Pause`)
         }
     }
@@ -158,7 +175,7 @@ class Room {
             this.playing = true
             this.pos = pos
             this.updated = now()
-            this.broadcast(senderID)
+            this.broadcast()
             this.notify(senderID, `Play`)
         }
     }
@@ -168,7 +185,7 @@ class Room {
         if (pos != null && pos >= 0) {
             this.pos = pos
             this.updated = now()
-            this.broadcast(senderID)
+            this.broadcast()
             this.notify(senderID, `Seek ${prettyPos(pos)}`)
         }
     }

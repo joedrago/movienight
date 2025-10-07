@@ -147,6 +147,14 @@ socket.on("room", (msg) => {
             el.url.value = room.url
             allowVideoControls = true
 
+            // This only works if your server hosting the VTT has something
+            // similar to this nginx settings (feel free to restrict it
+            // further):
+            //
+            // location / {
+            //     add_header 'Access-Control-Allow-Origin' '*' always;
+            // }
+
             if (vtturl != null) {
                 let subtitles = document.createElement("track")
                 subtitles.src = vtturl

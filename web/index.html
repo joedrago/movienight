@@ -97,6 +97,13 @@
         margin-right: 10px;
         accent-color: #aaf;
     }
+    #subs {
+        cursor: pointer;
+        font-size: 0.6em;
+        margin-right: 10px;
+        align-self: center;
+        display: none;
+    }
     #fullscreen {
         cursor: pointer;
         margin-right: 10px;
@@ -148,12 +155,19 @@
         color: #afa;
     }
 
+    video::cue {
+        background-color:rgba(0, 0, 0, 0);
+        text-shadow: 1px 1px 2px #000;
+        /* color: rgb(255, 200, 0); */
+        color: #dd6;
+    }
+
 </style>
 </head>
 <body>
 
 <div id="videoContainer">
-    <video id="v" muted autoplay></video>
+    <video crossorigin="anonymous" id="v" muted autoplay></video>
     <div id="unmute">
         Click to activate!
     </div>
@@ -166,6 +180,7 @@
         <input id="seek" type="range" value="0" max="100">
         <input id="volume" type="range" value="0" min="0" max="100"></input>
         <div id="info"><span id="who">--</span><br><span id="count">--</span></div>
+        <span id="subs">[cc]</span>
         <span id="fullscreen">&#x26F6</span>
     </div>
     <div id="notification"></div>

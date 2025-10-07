@@ -40,6 +40,7 @@ for (let name of [
     "pause",
     "seek",
     "volume",
+    "subs",
     "fullscreen",
     "unmute",
     "notification"
@@ -112,6 +113,17 @@ window.toggleFullscreen = () => {
     }
 }
 
+window.toggleSubs = () => {
+    let track = el.v.textTracks && el.v.textTracks[0]
+    if (track) {
+        if (track.mode == "showing") {
+            track.mode = "hidden"
+        } else {
+            track.mode = "showing"
+        }
+    }
+}
+
 socket.on("room", (msg) => {
     console.log("room: ", msg)
 
@@ -123,9 +135,31 @@ socket.on("room", (msg) => {
 
     if (newVideo) {
         if (room.url) {
-            el.v.src = room.url
+            let url = room.url
+            let vtturl = null
+            const matches = room.url.match(/^(.+)\.vtt$/)
+            if (matches) {
+                vtturl = room.url
+                url = matches[1]
+            }
+
+            el.v.src = url
             el.url.value = room.url
             allowVideoControls = true
+
+            if (vtturl != null) {
+                let subtitles = document.createElement("track")
+                subtitles.src = vtturl
+                subtitles.kind = "captions"
+                subtitles.label = "English"
+                subtitles.srclang = "en"
+                el.v.appendChild(subtitles)
+                let track = el.v.textTracks && el.v.textTracks[0]
+                if (track) {
+                    track.mode = "showing"
+                }
+                el.subs.style.display = "flex"
+            }
 
             try {
                 const u = new URL(room.url)
@@ -186,8 +220,13 @@ socket.on("connect", () => {
         uid: UID
     }
     if (el.v.src && el.v.src.length > 0 && el.v.src != window.location) {
-        console.log(`el.v.src: ${el.v.src}`)
-        roomPayload.url = el.v.src
+        let src = el.v.src
+        let track = el.v.textTracks && el.v.textTracks[0]
+        if (track) {
+            src += ".vtt"
+        }
+        console.log(`src: ${src}`)
+        roomPayload.url = src
         if (el.v.currentTime > 0) {
             roomPayload.pos = el.v.currentTime
         }
@@ -217,6 +256,11 @@ function init() {
     // the fullscreen button toggle
     el.fullscreen.addEventListener("click", () => {
         toggleFullscreen()
+    })
+
+    // subs toggle
+    el.subs.addEventListener("click", () => {
+        toggleSubs()
     })
 
     // Remove the Click panel

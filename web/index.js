@@ -53,6 +53,7 @@ let controlsVisible = true
 let hideTimeout = null
 let notifications = []
 let allowVideoControls = false
+let subsTrackDom = null
 
 // --------------------------------------------------------------------------------------
 // Event Handlers
@@ -155,6 +156,11 @@ socket.on("room", (msg) => {
             //     add_header 'Access-Control-Allow-Origin' '*' always;
             // }
 
+            if (subsTrackDom) {
+                el.v.removeChild(subsTrackDom)
+                subsTrackDom = null
+            }
+
             if (vtturl != null) {
                 let subtitles = document.createElement("track")
                 subtitles.src = vtturl
@@ -162,6 +168,7 @@ socket.on("room", (msg) => {
                 subtitles.label = "English"
                 subtitles.srclang = "en"
                 el.v.appendChild(subtitles)
+                subsTrackDom = subtitles
                 let track = el.v.textTracks && el.v.textTracks[0]
                 if (track) {
                     track.mode = "showing"

@@ -6,6 +6,11 @@ const { randomName } = require("./names")
 const PRUNE_ROOM_INTERVAL_SECONDS = 300
 const PRUNE_ROOM_MAX_AGE_SECONDS = 3600
 
+const WAIT_FOR_LOADING_SECONDS = 5
+
+const SERVER_SENDER_ID = "*SERVER*"
+const SERVER_NAME = `<span class="servername">Movie Night</span>`
+
 let rooms = {}
 
 function now() {
@@ -65,6 +70,8 @@ class Room {
         this.countUpdated = now()
         this.sockets = {}
         this.names = {}
+        this.names[SERVER_SENDER_ID] = SERVER_NAME
+        this.loadTimeout = null
     }
 
     connect(socket, uid) {
@@ -149,10 +156,23 @@ class Room {
         if (url != null && url.length > 0 && this.url != url) {
             console.log(`[${this.name}] setUrl(${url})`)
             this.url = url
+            this.playing = false
             this.pos = 0
             this.updated = now()
             this.broadcast()
-            this.notify(senderID, `URL ${url}`)
+            if (senderID != null) {
+                this.notify(senderID, `URL ${url}`)
+                this.notify(SERVER_SENDER_ID, `Waiting ${WAIT_FOR_LOADING_SECONDS} seconds for everyone to load...`)
+            }
+            if (this.loadTimeout != null) {
+                clearTimeout(this.loadTimeout)
+                this.loadTimeout = null
+            }
+            this.loadTimeout = setTimeout(() => {
+                this.loadTimeout = null
+                this.notify(SERVER_SENDER_ID, `Showtime!`)
+                this.play(null, 0)
+            }, WAIT_FOR_LOADING_SECONDS * 1000)
         } else {
             console.log(`[${this.name}] setUrl(${url}) (ignored)`)
         }
@@ -164,8 +184,15 @@ class Room {
             this.playing = false
             this.pos = pos
             this.updated = now()
+            if (this.loadTimeout != null) {
+                clearTimeout(this.loadTimeout)
+                this.loadTimeout = null
+                this.playing = true
+            }
             this.broadcast()
-            this.notify(senderID, `Pause`)
+            if (senderID != null) {
+                this.notify(senderID, `Pause`)
+            }
         }
     }
 
@@ -175,8 +202,15 @@ class Room {
             this.playing = true
             this.pos = pos
             this.updated = now()
+            if (this.loadTimeout != null) {
+                clearTimeout(this.loadTimeout)
+                this.loadTimeout = null
+                this.playing = true
+            }
             this.broadcast()
-            this.notify(senderID, `Play`)
+            if (senderID != null) {
+                this.notify(senderID, `Play`)
+            }
         }
     }
 
@@ -185,8 +219,15 @@ class Room {
         if (pos != null && pos >= 0) {
             this.pos = pos
             this.updated = now()
+            if (this.loadTimeout != null) {
+                clearTimeout(this.loadTimeout)
+                this.loadTimeout = null
+                this.playing = true
+            }
             this.broadcast()
-            this.notify(senderID, `Seek ${prettyPos(pos)}`)
+            if (senderID != null) {
+                this.notify(senderID, `Seek ${prettyPos(pos)}`)
+            }
         }
     }
 }

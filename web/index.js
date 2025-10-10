@@ -1,7 +1,9 @@
 // --------------------------------------------------------------------------------------
 // Helpers
 
-const NOTIFICATION_DURATION_SECONDS = 5
+const NOTIFICATION_DURATION_SECONDS = 6
+
+const QUICK_SEEK_SECONDS = 10
 
 function now() {
     return Math.floor(Date.now() / 1000)
@@ -122,6 +124,14 @@ window.toggleSubs = () => {
         } else {
             track.mode = "showing"
         }
+    }
+}
+
+window.togglePlayPause = () => {
+    if (el.v.paused) {
+        socket.emit("play", { room: window.ROOM, pos: el.v.currentTime })
+    } else {
+        socket.emit("pause", { room: window.ROOM, pos: el.v.currentTime })
     }
 }
 
@@ -261,11 +271,7 @@ function init() {
 
     // the pause button toggle
     el.pause.addEventListener("click", () => {
-        if (el.v.paused) {
-            socket.emit("play", { room: window.ROOM, pos: el.v.currentTime })
-        } else {
-            socket.emit("pause", { room: window.ROOM, pos: el.v.currentTime })
-        }
+        togglePlayPause()
     })
 
     // the fullscreen button toggle
@@ -341,6 +347,26 @@ function init() {
                 uid: UID
             }
             socket.emit("room", roomPayload)
+        }
+    })
+
+    document.addEventListener("keydown", function (event) {
+        // console.log(`Key pressed: "${event.key}"`)
+        if (event.key == "ArrowLeft") {
+            if (el.v.currentTime != null && el.v.currentTime > 0) {
+                let newTime = el.v.currentTime - QUICK_SEEK_SECONDS
+                if (newTime < 0) {
+                    newTime = 0
+                }
+                socket.emit("seek", { room: window.ROOM, pos: newTime })
+            }
+        } else if (event.key == "ArrowRight") {
+            if (el.v.currentTime != null && el.v.currentTime > 0) {
+                let newTime = el.v.currentTime + QUICK_SEEK_SECONDS
+                socket.emit("seek", { room: window.ROOM, pos: newTime })
+            }
+        } else if (event.key == " ") {
+            togglePlayPause()
         }
     })
 

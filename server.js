@@ -224,7 +224,7 @@ class Room {
         if (pos != null && pos >= 0) {
             const prevPos = this.pos + (now() - this.updated)
             const deltaPos = Math.abs(prevPos - pos)
-            const bigSeek = deltaPos >= BIG_SEEK_SECONDS
+            const bigSeek = (deltaPos >= BIG_SEEK_SECONDS) || (this.loadTimeout != null)
             this.pos = pos
             this.updated = now()
             if (this.loadTimeout != null) {

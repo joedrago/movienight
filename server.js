@@ -237,7 +237,7 @@ class Room {
                 this.notify(senderID, `Seek ${prettyPos(pos)}`)
             }
             if (bigSeek) {
-                showPatience("seek", pos)
+                this.showPatience("seek", pos)
             }
         }
     }

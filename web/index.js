@@ -51,7 +51,7 @@ for (let name of [
 }
 const socket = io()
 let room = null
-let controlsVisible = true
+let controlsVisible = false
 let hideTimeout = null
 let notifications = []
 let allowVideoControls = false
@@ -83,7 +83,7 @@ setInterval(() => {
 }, 1000)
 
 window.hideControls = () => {
-    if (controlsVisible) {
+    if (controlsVisible && allowVideoControls) {
         controlsVisible = false
         el.urlControls.style.display = "none"
         el.videoControls.style.display = "none"
@@ -157,6 +157,7 @@ socket.on("room", (msg) => {
             el.v.src = url
             el.url.value = room.url
             allowVideoControls = true
+            showControls()
 
             // This only works if your server hosting the VTT has something
             // similar to this nginx settings (feel free to restrict it
@@ -348,6 +349,7 @@ function init() {
             }
             socket.emit("room", roomPayload)
         }
+        showControls()
     })
 
     document.addEventListener("keydown", function (event) {

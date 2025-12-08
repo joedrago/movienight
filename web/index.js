@@ -157,7 +157,7 @@ socket.on("room", (msg) => {
             el.v.src = url
             el.url.value = room.url
             allowVideoControls = true
-            showControls()
+            window.showControls()
 
             // This only works if your server hosting the VTT has something
             // similar to this nginx settings (feel free to restrict it
@@ -190,12 +190,12 @@ socket.on("room", (msg) => {
             try {
                 const u = new URL(room.url)
                 if (u && u.pathname) {
-                    const matches = String(u.pathname).match(/\/([^\/]+)\.mp4/)
+                    const matches = String(u.pathname).match(/\/([^/]+)\.mp4/)
                     if (matches) {
                         document.title = `Movie Night: ${matches[1]}`
                     }
                 }
-            } catch (e) {
+            } catch {
                 // who cares
             }
         } else {
@@ -204,13 +204,13 @@ socket.on("room", (msg) => {
     }
 
     // const delta = Math.abs(v.currentTime - room.pos)
-    v.currentTime = room.pos
+    el.v.currentTime = room.pos
     if (room.playing) {
-        v.autoplay = true
-        v.play()
+        el.v.autoplay = true
+        el.v.play()
     } else {
-        v.autoplay = false
-        v.pause()
+        el.v.autoplay = false
+        el.v.pause()
     }
 })
 
@@ -272,17 +272,17 @@ function init() {
 
     // the pause button toggle
     el.pause.addEventListener("click", () => {
-        togglePlayPause()
+        window.togglePlayPause()
     })
 
     // the fullscreen button toggle
     el.fullscreen.addEventListener("click", () => {
-        toggleFullscreen()
+        window.toggleFullscreen()
     })
 
     // subs toggle
     el.subs.addEventListener("click", () => {
-        toggleSubs()
+        window.toggleSubs()
     })
 
     // Remove the Click panel
@@ -296,14 +296,14 @@ function init() {
         // panel.
         el.videoContainer.addEventListener(
             "mousemove",
-            (event) => {
+            (_event) => {
                 window.showControls()
             },
             false
         )
         el.videoContainer.addEventListener(
             "mouseout",
-            (event) => {
+            (_event) => {
                 window.hideControls()
             },
             false
@@ -316,7 +316,7 @@ function init() {
     })
 
     // Update the seek bar as the video plays
-    v.addEventListener("timeupdate", () => {
+    el.v.addEventListener("timeupdate", () => {
         const value = (100 / el.v.duration) * el.v.currentTime
         el.seek.value = value
         // console.log("v.timeupdate")
@@ -324,14 +324,14 @@ function init() {
     })
 
     // Seek to the new time when the seek bar value changes
-    seek.addEventListener("input", () => {
+    el.seek.addEventListener("input", () => {
         const time = el.v.duration * (el.seek.value / 100)
         // el.v.currentTime = time
         socket.emit("seek", { room: window.ROOM, pos: time })
     })
 
     // volume control
-    volume.addEventListener("change", (ev) => {
+    el.volume.addEventListener("change", (ev) => {
         ev.preventDefault()
         el.v.muted = false
         el.v.volume = el.volume.value / 100
@@ -349,7 +349,7 @@ function init() {
             }
             socket.emit("room", roomPayload)
         }
-        showControls()
+        window.showControls()
     })
 
     document.addEventListener("keydown", function (event) {
@@ -368,7 +368,7 @@ function init() {
                 socket.emit("seek", { room: window.ROOM, pos: newTime })
             }
         } else if (event.key == " ") {
-            togglePlayPause()
+            window.togglePlayPause()
         }
     })
 

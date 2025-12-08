@@ -224,7 +224,7 @@ class Room {
         if (pos != null && pos >= 0) {
             const prevPos = this.pos + (now() - this.updated)
             const deltaPos = Math.abs(prevPos - pos)
-            const bigSeek = (deltaPos >= BIG_SEEK_SECONDS) || (this.loadTimeout != null)
+            const bigSeek = deltaPos >= BIG_SEEK_SECONDS || this.loadTimeout != null
             this.pos = pos
             this.updated = now()
             if (this.loadTimeout != null) {
@@ -243,11 +243,11 @@ class Room {
     }
 }
 
-async function main(argv) {
+async function main(_args) {
     const app = express()
     const http = require("http").createServer(app)
+    const io = require("socket.io")(http, { pingTimeout: 10000 })
 
-    io = require("socket.io")(http, { pingTimeout: 10000 })
     io.on("connection", (socket) => {
         console.log(`New Connection: ${socket.id}`)
 
@@ -305,13 +305,23 @@ async function main(argv) {
 
     app.use("/_web", express.static("web"))
 
+    app.use("/_steam", (req, res) => {
+        const sanitized = sanitizeRoomName(req.params.room)
+        if (sanitized != req.params.room) {
+            return res.redirect(`/${encodeURIComponent(sanitized)}`)
+        }
+
+        let html = fs.readFileSync(`${__dirname}/web/index.html`, "utf8")
+        res.send(html)
+    })
+
     app.get("/:room", (req, res) => {
         const sanitized = sanitizeRoomName(req.params.room)
         if (sanitized != req.params.room) {
             return res.redirect(`/${encodeURIComponent(sanitized)}`)
         }
 
-        html = fs.readFileSync(`${__dirname}/web/index.html`, "utf8")
+        let html = fs.readFileSync(`${__dirname}/web/index.html`, "utf8")
         html = html.replace(/!ROOM!/, sanitized)
         res.send(html)
     })
@@ -320,7 +330,7 @@ async function main(argv) {
 
     app.use(bodyParser.json())
 
-    host = "127.0.0.1"
+    let host = "127.0.0.1"
     // if (argv.length > 0) {
     //     host = "0.0.0.0"
     // }

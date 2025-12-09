@@ -352,6 +352,27 @@ socket.on("connect", () => {
 })
 
 function init() {
+    // Display room name briefly
+    const roomLabel = document.createElement("div")
+    roomLabel.textContent = window.ROOM
+    roomLabel.style.position = "fixed"
+    roomLabel.style.top = "20px"
+    roomLabel.style.left = "20px"
+    roomLabel.style.fontFamily = "monospace"
+    roomLabel.style.fontSize = "3em"
+    roomLabel.style.color = "#afa"
+    roomLabel.style.opacity = "0.8"
+    roomLabel.style.zIndex = "10"
+    roomLabel.style.transition = "opacity 1s"
+    roomLabel.style.pointerEvents = "none"
+    document.body.appendChild(roomLabel)
+    setTimeout(() => {
+        roomLabel.style.opacity = "0"
+        setTimeout(() => {
+            roomLabel.remove()
+        }, 1000)
+    }, 5000)
+
     new GamepadListener((btn) => {
         switch (btn) {
             case "a":
@@ -360,6 +381,9 @@ function init() {
                 } else {
                     window.togglePlayPause()
                 }
+                break
+            case "x":
+                window.toggleSubs()
                 break
             case "left":
                 seekBackward()

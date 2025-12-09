@@ -35,6 +35,7 @@ console.log(`UID: ${UID}`)
 let inSteamUI = false
 let steamMovies = []
 let movieOverlay = null
+let playerActivated = false
 
 window.addEventListener("message", (e) => {
     if (e.data && e.data.type === "steam") {
@@ -67,6 +68,11 @@ function seekForward() {
 }
 
 function activatePlayer() {
+    if (playerActivated) {
+        return
+    }
+    playerActivated = true
+
     el.unmute.style.display = "none"
     el.v.muted = false
     el.volume.value = Math.floor(el.v.volume * 100)
@@ -85,29 +91,12 @@ function activatePlayer() {
         },
         false
     )
-
-    new GamepadListener((btn) => {
-        switch (btn) {
-            case "a":
-                window.togglePlayPause()
-                break
-            case "left":
-                seekBackward()
-                break
-            case "right":
-                seekForward()
-                break
-            case "y":
-                if (inSteamUI) {
-                    window.parent.location.reload()
-                }
-                break
-        }
-    })
 }
 
 function showMovieSelection() {
-    if (steamMovies.length === 0) return
+    if (steamMovies.length === 0) {
+        return
+    }
     if (!movieOverlay) {
         movieOverlay = new OverlayList()
     }
@@ -363,10 +352,27 @@ socket.on("connect", () => {
 })
 
 function init() {
-    console.log("listening to gamepad")
     new GamepadListener((btn) => {
-        // btn is one of: "a", "b", "x", "y", "up", "down", "left", "right"
-        console.log(btn)
+        switch (btn) {
+            case "a":
+                if (!playerActivated) {
+                    activatePlayer()
+                } else {
+                    window.togglePlayPause()
+                }
+                break
+            case "left":
+                seekBackward()
+                break
+            case "right":
+                seekForward()
+                break
+            case "y":
+                if (inSteamUI) {
+                    window.parent.location.reload()
+                }
+                break
+        }
     })
 
     // Kick the player after a new .src load

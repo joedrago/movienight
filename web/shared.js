@@ -33,7 +33,9 @@ class GamepadListener {
     }
 
     start() {
-        if (this.animFrame) return
+        if (this.animFrame) {
+            return
+        }
         console.log("GamepadListener polling started")
         this.poll()
     }
@@ -141,19 +143,25 @@ class OverlayList {
     }
 
     moveUp() {
-        if (this.items.length === 0) return
+        if (this.items.length === 0) {
+            return
+        }
         this.selectedIndex = (this.selectedIndex - 1 + this.items.length) % this.items.length
         this.render()
     }
 
     moveDown() {
-        if (this.items.length === 0) return
+        if (this.items.length === 0) {
+            return
+        }
         this.selectedIndex = (this.selectedIndex + 1) % this.items.length
         this.render()
     }
 
     selectItem() {
-        if (this.items.length === 0) return
+        if (this.items.length === 0) {
+            return
+        }
         const selected = this.items[this.selectedIndex]
         this.hide()
         if (this.onSelect) {

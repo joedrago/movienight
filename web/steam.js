@@ -40,6 +40,7 @@ socket.on("available", (msg) => {
         },
         () => {
             console.log("Selection cancelled")
+            window.close()
         }
     )
 })
@@ -75,6 +76,11 @@ function createIframe(src) {
 // Init
 
 function init() {
+    new GamepadListener((btn) => {
+        if (btn === "y") {
+            location.reload()
+        }
+    })
     socket.emit("available", { sources })
 }
 

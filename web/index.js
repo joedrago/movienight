@@ -367,11 +367,6 @@ function init() {
             case "right":
                 seekForward()
                 break
-            case "y":
-                if (inSteamUI) {
-                    window.parent.location.reload()
-                }
-                break
         }
     })
 

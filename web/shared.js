@@ -6,6 +6,7 @@ class GamepadListener {
         this.onButton = onButton
         this.prevState = {}
         this.animFrame = null
+        this.running = false
 
         if (!navigator.getGamepads) {
             console.error("Gamepad API not supported in this browser")
@@ -33,14 +34,16 @@ class GamepadListener {
     }
 
     start() {
-        if (this.animFrame) {
+        if (this.running) {
             return
         }
+        this.running = true
         console.log("GamepadListener polling started")
         this.poll()
     }
 
     stop() {
+        this.running = false
         if (this.animFrame) {
             cancelAnimationFrame(this.animFrame)
             this.animFrame = null
@@ -48,6 +51,9 @@ class GamepadListener {
     }
 
     poll() {
+        if (!this.running) {
+            return
+        }
         const gamepads = navigator.getGamepads()
         for (const gp of gamepads) {
             if (!gp) continue
@@ -75,7 +81,9 @@ class GamepadListener {
                 this.prevState[key] = pressed
             }
         }
-        this.animFrame = requestAnimationFrame(() => this.poll())
+        if (this.running) {
+            this.animFrame = requestAnimationFrame(() => this.poll())
+        }
     }
 }
 

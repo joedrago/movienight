@@ -3,6 +3,16 @@ const express = require("express")
 const fs = require("fs")
 const { randomName } = require("./names")
 
+let config
+try {
+    const configData = fs.readFileSync(`${__dirname}/config.json`, "utf8")
+    config = JSON.parse(configData)
+    console.log("Loaded config.json")
+} catch (err) {
+    console.error("Fatal: Failed to load config.json:", err.message)
+    process.exit(1)
+}
+
 const PRUNE_ROOM_INTERVAL_SECONDS = 300
 const PRUNE_ROOM_MAX_AGE_SECONDS = 3600
 
@@ -243,7 +253,7 @@ class Room {
     }
 }
 
-async function main(_args) {
+async function main(_argv) {
     const app = express()
     const http = require("http").createServer(app)
     const io = require("socket.io")(http, { pingTimeout: 10000 })
@@ -291,10 +301,38 @@ async function main(_args) {
             }
         })
 
+        socket.on("available", (msg) => {
+            const movies = []
+            if (msg && msg.sources) {
+                for (const source of msg.sources) {
+                    if (config.sources && config.sources[source]) {
+                        const dir = config.sources[source]
+                        try {
+                            const files = fs.readdirSync(dir)
+                            const fileSet = new Set(files)
+                            for (const file of files) {
+                                if (!file.endsWith(".vtt") && fileSet.has(file + ".vtt")) {
+                                    continue
+                                }
+                                movies.push(source + file)
+                            }
+                        } catch (err) {
+                            console.error(`Failed to read directory ${dir}:`, err.message)
+                        }
+                    }
+                }
+            }
+            socket.emit("available", { rooms: Object.keys(rooms), movies })
+        })
+
         socket.on("disconnect", () => {
             for (let roomName in rooms) {
                 const room = rooms[roomName]
                 room.disconnect(socket)
+                if (room.count === 0 && room.url === "") {
+                    console.log(`[${roomName}]: Pruning immediately; no URL was ever set`)
+                    delete rooms[roomName]
+                }
             }
         })
     })
@@ -306,12 +344,7 @@ async function main(_args) {
     app.use("/_web", express.static("web"))
 
     app.use("/_steam", (req, res) => {
-        const sanitized = sanitizeRoomName(req.params.room)
-        if (sanitized != req.params.room) {
-            return res.redirect(`/${encodeURIComponent(sanitized)}`)
-        }
-
-        let html = fs.readFileSync(`${__dirname}/web/index.html`, "utf8")
+        let html = fs.readFileSync(`${__dirname}/web/steam.html`, "utf8")
         res.send(html)
     })
 

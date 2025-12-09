@@ -32,6 +32,105 @@ console.log(`UID: ${UID}`)
 // --------------------------------------------------------------------------------------
 // Globals
 
+let inSteamUI = false
+let steamMovies = []
+let movieOverlay = null
+
+window.addEventListener("message", (e) => {
+    if (e.data && e.data.type === "steam") {
+        console.log("Running inside Steam UI")
+        inSteamUI = true
+        steamMovies = e.data.movies || []
+        console.log("Movies available:", steamMovies)
+        // Handle race condition: room event may have already arrived with no URL
+        if (room && !room.url && steamMovies.length > 0) {
+            showMovieSelection()
+        }
+    }
+})
+
+function seekBackward() {
+    if (el.v.currentTime != null && el.v.currentTime > 0) {
+        let newTime = el.v.currentTime - QUICK_SEEK_SECONDS
+        if (newTime < 0) {
+            newTime = 0
+        }
+        socket.emit("seek", { room: window.ROOM, pos: newTime })
+    }
+}
+
+function seekForward() {
+    if (el.v.currentTime != null && el.v.currentTime > 0) {
+        let newTime = el.v.currentTime + QUICK_SEEK_SECONDS
+        socket.emit("seek", { room: window.ROOM, pos: newTime })
+    }
+}
+
+function activatePlayer() {
+    el.unmute.style.display = "none"
+    el.v.muted = false
+    el.volume.value = Math.floor(el.v.volume * 100)
+
+    el.videoContainer.addEventListener(
+        "mousemove",
+        (_event) => {
+            window.showControls()
+        },
+        false
+    )
+    el.videoContainer.addEventListener(
+        "mouseout",
+        (_event) => {
+            window.hideControls()
+        },
+        false
+    )
+
+    new GamepadListener((btn) => {
+        switch (btn) {
+            case "a":
+                window.togglePlayPause()
+                break
+            case "left":
+                seekBackward()
+                break
+            case "right":
+                seekForward()
+                break
+            case "y":
+                if (inSteamUI) {
+                    window.parent.location.reload()
+                }
+                break
+        }
+    })
+}
+
+function showMovieSelection() {
+    if (steamMovies.length === 0) return
+    if (!movieOverlay) {
+        movieOverlay = new OverlayList()
+    }
+    el.unmute.style.display = "none"
+    movieOverlay.show(
+        steamMovies,
+        (movie) => {
+            console.log("Movie chosen:", movie)
+            activatePlayer()
+            el.url.value = movie
+            socket.emit("room", {
+                room: window.ROOM,
+                url: movie,
+                uid: UID
+            })
+        },
+        () => {
+            console.log("Movie selection cancelled")
+            activatePlayer()
+        }
+    )
+}
+
 const el = {}
 for (let name of [
     "videoContainer",
@@ -200,6 +299,9 @@ socket.on("room", (msg) => {
             }
         } else {
             el.v.src = ""
+            if (inSteamUI && steamMovies.length > 0) {
+                showMovieSelection()
+            }
         }
     }
 
@@ -261,6 +363,12 @@ socket.on("connect", () => {
 })
 
 function init() {
+    console.log("listening to gamepad")
+    new GamepadListener((btn) => {
+        // btn is one of: "a", "b", "x", "y", "up", "down", "left", "right"
+        console.log(btn)
+    })
+
     // Kick the player after a new .src load
     el.v.addEventListener("loadeddata", () => {
         el.v.currentTime = room.pos
@@ -287,27 +395,7 @@ function init() {
 
     // Remove the Click panel
     el.unmute.addEventListener("click", () => {
-        el.unmute.style.display = "none"
-        el.v.muted = false
-        el.volume.value = Math.floor(el.v.volume * 100)
-
-        // Listen for mouse events to hide/show all controls. NOTE: we don't
-        // offer these events until they successfully click away the Unmute
-        // panel.
-        el.videoContainer.addEventListener(
-            "mousemove",
-            (_event) => {
-                window.showControls()
-            },
-            false
-        )
-        el.videoContainer.addEventListener(
-            "mouseout",
-            (_event) => {
-                window.hideControls()
-            },
-            false
-        )
+        activatePlayer()
     })
 
     // the main video itself was clicked
@@ -355,18 +443,9 @@ function init() {
     document.addEventListener("keydown", function (event) {
         // console.log(`Key pressed: "${event.key}"`)
         if (event.key == "ArrowLeft") {
-            if (el.v.currentTime != null && el.v.currentTime > 0) {
-                let newTime = el.v.currentTime - QUICK_SEEK_SECONDS
-                if (newTime < 0) {
-                    newTime = 0
-                }
-                socket.emit("seek", { room: window.ROOM, pos: newTime })
-            }
+            seekBackward()
         } else if (event.key == "ArrowRight") {
-            if (el.v.currentTime != null && el.v.currentTime > 0) {
-                let newTime = el.v.currentTime + QUICK_SEEK_SECONDS
-                socket.emit("seek", { room: window.ROOM, pos: newTime })
-            }
+            seekForward()
         } else if (event.key == " ") {
             window.togglePlayPause()
         }

@@ -1,8 +1,12 @@
 {
     "name": "movienight",
+    "version": "1.0.0",
+    "main": "electron/main.js",
     "scripts": {
-        "format": "prettier -w server.js ./web",
-        "eslint": "eslint server.js ./web"
+        "format": "prettier -w server.js ./web ./electron",
+        "eslint": "eslint server.js ./web",
+        "electron": "electron electron/main.js",
+        "make": "electron-forge make"
     },
     "prettier": {
         "printWidth": 130,
@@ -16,6 +20,12 @@
         "socket.io": "^2.3.0"
     },
     "devDependencies": {
+        "@electron-forge/cli": "^7.10.2",
+        "@electron-forge/maker-deb": "^7.10.2",
+        "@electron-forge/maker-rpm": "^7.10.2",
+        "@electron-forge/maker-squirrel": "^7.10.2",
+        "@electron-forge/maker-zip": "^7.10.2",
+        "electron": "^39.2.6",
         "eslint": "^9.39.1"
     }
 }

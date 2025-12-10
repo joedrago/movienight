@@ -1,0 +1,4 @@
+{
+    "endpoint": "http://your.actual.movienight.endpoint.example.com",
+    "sources": ["https://example.com/movienight/"]
+}

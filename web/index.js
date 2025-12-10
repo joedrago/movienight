@@ -36,6 +36,7 @@ let inSteamUI = false
 let steamMovies = []
 let movieOverlay = null
 let playerActivated = false
+let gamepadListener = null
 
 window.addEventListener("message", (e) => {
     if (e.data && e.data.type === "steam") {
@@ -43,6 +44,34 @@ window.addEventListener("message", (e) => {
         inSteamUI = true
         steamMovies = e.data.movies || []
         console.log("Movies available:", steamMovies)
+        // Start listening to gamepad when in Steam UI
+        if (!gamepadListener) {
+            gamepadListener = new GamepadListener((btn) => {
+                switch (btn) {
+                    case "a":
+                        if (!playerActivated) {
+                            activatePlayer()
+                        } else {
+                            window.togglePlayPause()
+                        }
+                        break
+                    case "x":
+                        window.toggleSubs()
+                        break
+                    case "y":
+                        if (window.parent !== window) {
+                            window.parent.postMessage({ type: "reload" }, "*")
+                        }
+                        break
+                    case "left":
+                        seekBackward()
+                        break
+                    case "right":
+                        seekForward()
+                        break
+                }
+            })
+        }
         // Handle race condition: room event may have already arrived with no URL
         if (room && !room.url && steamMovies.length > 0) {
             showMovieSelection()
@@ -394,32 +423,6 @@ function init() {
             roomLabel.remove()
         }, 1000)
     }, 5000)
-
-    new GamepadListener((btn) => {
-        switch (btn) {
-            case "a":
-                if (!playerActivated) {
-                    activatePlayer()
-                } else {
-                    window.togglePlayPause()
-                }
-                break
-            case "x":
-                window.toggleSubs()
-                break
-            case "y":
-                if (window.parent !== window) {
-                    window.parent.postMessage({ type: "reload" }, "*")
-                }
-                break
-            case "left":
-                seekBackward()
-                break
-            case "right":
-                seekForward()
-                break
-        }
-    })
 
     // Kick the player after a new .src load
     el.v.addEventListener("loadeddata", () => {

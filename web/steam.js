@@ -73,6 +73,15 @@ function createIframe(src) {
 }
 
 // --------------------------------------------------------------------------------------
+// Message Handler
+
+window.addEventListener("message", (e) => {
+    if (e.data?.type === "reload") {
+        location.reload()
+    }
+})
+
+// --------------------------------------------------------------------------------------
 // Init
 
 function init() {

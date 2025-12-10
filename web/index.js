@@ -385,6 +385,11 @@ function init() {
             case "x":
                 window.toggleSubs()
                 break
+            case "y":
+                if (window.parent !== window) {
+                    window.parent.postMessage({ type: "reload" }, "*")
+                }
+                break
             case "left":
                 seekBackward()
                 break

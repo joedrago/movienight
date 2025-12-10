@@ -1,5 +1,7 @@
 {
     "name": "movienight",
+    "author": "Joe Drago <joedrago@gmail.com>",
+    "description": "Movie Night",
     "version": "1.0.0",
     "main": "electron/main.js",
     "scripts": {

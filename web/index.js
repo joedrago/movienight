@@ -77,10 +77,25 @@ function activatePlayer() {
     el.v.muted = false
     el.volume.value = Math.floor(el.v.volume * 100)
 
+    // Start cursor hide timer immediately on activation
+    cursorHideTimeout = setTimeout(() => {
+        cursorHideTimeout = null
+        el.videoContainer.style.cursor = "none"
+    }, 5000)
+
     el.videoContainer.addEventListener(
         "mousemove",
         (_event) => {
             window.showControls()
+            // Show cursor and reset hide timer
+            el.videoContainer.style.cursor = "default"
+            if (cursorHideTimeout != null) {
+                clearTimeout(cursorHideTimeout)
+            }
+            cursorHideTimeout = setTimeout(() => {
+                cursorHideTimeout = null
+                el.videoContainer.style.cursor = "none"
+            }, 5000)
         },
         false
     )
@@ -88,6 +103,12 @@ function activatePlayer() {
         "mouseout",
         (_event) => {
             window.hideControls()
+            // Show cursor when leaving the video container
+            el.videoContainer.style.cursor = "default"
+            if (cursorHideTimeout != null) {
+                clearTimeout(cursorHideTimeout)
+                cursorHideTimeout = null
+            }
         },
         false
     )
@@ -144,6 +165,7 @@ let hideTimeout = null
 let notifications = []
 let allowVideoControls = false
 let subsTrackDom = null
+let cursorHideTimeout = null
 
 // --------------------------------------------------------------------------------------
 // Event Handlers

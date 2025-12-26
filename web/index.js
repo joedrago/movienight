@@ -474,11 +474,11 @@ function init() {
     })
 
     // volume control
-    el.volume.addEventListener("change", (ev) => {
+    el.volume.addEventListener("input", (ev) => {
         ev.preventDefault()
         el.v.muted = false
         el.v.volume = el.volume.value / 100
-        console.log(`volume.change ${(el.volume.value / 100).toFixed(2)}`)
+        console.log(`volume.input ${(el.volume.value / 100).toFixed(2)}`)
     })
 
     // listen for the enter key in the input box at the top and set a new url

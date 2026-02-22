@@ -4,7 +4,7 @@ DEVELOPMENT_TEAM ?= $(shell security find-certificate -c "Apple Development" -p 
 PROJECT = MovieNight.xcodeproj
 SCHEME = MovieNight
 
-.PHONY: generate build simulator install clean
+.PHONY: generate build simulator install massinstall clean
 
 generate: $(PROJECT)
 
@@ -37,6 +37,16 @@ install: build
 	@if [ -z "$(DEVICE_ID)" ]; then echo "Error: No Apple TV found. Run 'xcrun devicectl list devices' and pass DEVICE_ID=..."; exit 1; fi
 	xcrun devicectl device install app --device $(DEVICE_ID) $(APP)
 	xcrun devicectl device process launch --device $(DEVICE_ID) --terminate-existing com.movienight.app
+
+massinstall: build
+	$(eval APP := $(shell xcodebuild -project $(PROJECT) -scheme $(SCHEME) -sdk appletvos -configuration Release -showBuildSettings 2>/dev/null | awk '/ BUILT_PRODUCTS_DIR = /{print $$3}')/MovieNight.app)
+	@DEVICE_IDS=$$(xcrun devicectl list devices 2>/dev/null | grep 'Apple TV' | grep 'available' | awk '{for(i=1;i<=NF;i++) if($$i ~ /^[0-9A-F].*-.*-/) print $$i}'); \
+	if [ -z "$$DEVICE_IDS" ]; then echo "Error: No connected Apple TVs found."; exit 1; fi; \
+	for DID in $$DEVICE_IDS; do \
+		echo "Installing on $$DID ..."; \
+		xcrun devicectl device install app --device $$DID $(APP); \
+		xcrun devicectl device process launch --device $$DID --terminate-existing com.movienight.app; \
+	done
 
 clean:
 	rm -rf $(PROJECT) build DerivedData

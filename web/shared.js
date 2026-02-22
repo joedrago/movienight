@@ -221,6 +221,7 @@ class OverlayList {
                 this.moveDown()
                 break
             case "Enter":
+            case " ":
                 e.preventDefault()
                 this.selectItem()
                 break

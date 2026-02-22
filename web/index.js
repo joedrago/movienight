@@ -39,6 +39,13 @@ let playerActivated = false
 let gamepadListener = null
 
 window.addEventListener("message", (e) => {
+    if (e.data && e.data.type === "key") {
+        // Native tvOS app injects key events via postMessage
+        let evt = new KeyboardEvent(e.data.event, { key: e.data.key, bubbles: true })
+        let target = document.activeElement || document
+        target.dispatchEvent(evt)
+        return
+    }
     if (e.data && e.data.type === "steam") {
         console.log("Running inside Steam UI")
         inSteamUI = true
@@ -502,7 +509,11 @@ function init() {
         } else if (event.key == "ArrowRight") {
             seekForward()
         } else if (event.key == " ") {
-            window.togglePlayPause()
+            if (!playerActivated) {
+                activatePlayer()
+            } else {
+                window.togglePlayPause()
+            }
         }
     })
 

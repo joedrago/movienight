@@ -49,6 +49,12 @@ class WebViewController: UIViewController {
 
     override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
         for press in presses {
+            // Menu/Back button reloads the page to return to room selection
+            if press.type == .menu {
+                tvWebView.evaluateJavaScript("window._subsPatched = false; location.reload();")
+                return
+            }
+
             // Down arrow toggles subtitles when video is playing and subs are loaded
             if press.type == .downArrow {
                 let js = """
@@ -118,7 +124,7 @@ class WebViewController: UIViewController {
         switch press.type {
         case .select:      return " "           // Space
         case .playPause:   return " "           // Space
-        case .menu:        return "Escape"
+        case .menu:        return nil  // handled separately in pressesBegan
         case .upArrow:     return "ArrowUp"
         case .downArrow:   return "ArrowDown"
         case .leftArrow:   return "ArrowLeft"
